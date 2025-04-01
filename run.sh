@@ -21,3 +21,7 @@ echo "Installing required packages..."
 pip install -r requirements.txt
 echo "All packages installed."
 
+# Run The Application
+echo "Running License Plate Detection and Recognition Application..."
+python3 main.py
+echo "License Plate Detection and Recognition Application Finished Executing Successfully!"
