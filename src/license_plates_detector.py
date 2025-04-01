@@ -1,15 +1,24 @@
-from src.tracker import Sort
-from ultralytics import YOLO
-from src.ocr_reader import OCRReader
 import os
+
 import cv2
 import numpy as np
+from ultralytics import YOLO
+
+from src.ocr_reader import OCRReader
+from src.tracker import Sort
 
 
 class LicensePlatesDetector:
-    def __init__(self, vehicle_detection_model_name, license_plate_detector_model_name, input_video_path):
+    def __init__(
+        self,
+        vehicle_detection_model_name,
+        license_plate_detector_model_name,
+        input_video_path,
+        output_video_path,
+    ):
         # Set Class Attributes
         self.input_video_path = input_video_path
+        self.output_video_path = output_video_path
 
         # Initialize SORT Tracker
         self.tracker = Sort()
@@ -18,22 +27,33 @@ class LicensePlatesDetector:
         self.vehicle_detection_model = YOLO(vehicle_detection_model_name)
 
         # Load License Plate Detection Model
-        self.license_plate_detector_model = YOLO(os.path.join("models", license_plate_detector_model_name))
+        self.license_plate_detector_model = YOLO(
+            os.path.join("models", license_plate_detector_model_name)
+        )
 
         # Initialize OCR Reader
-        self.ocr_reader = OCRReader(
-            gpu=True
-        )
+        self.ocr_reader = OCRReader(gpu=True)
 
         # Define Vehicles Class id in COCO Dataset
         self.vehicles_classes_id = [2, 3, 5, 7]
-    
+
     def run(self):
         # Initialize Results Dictionary to store the results
         results_dictionary = {}
 
         # Load Video
         cap = cv2.VideoCapture(self.input_video_path)
+
+        # Get Video properties (e.g., frame size, FPS) for output video
+        frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps = cap.get(cv2.CAP_PROP_FPS)
+
+        # Initialize VideoWriter to save the output video
+        fourcc = cv2.VideoWriter_fourcc(*"XVID")  # Or use 'mp4v' for .mp4 output
+        out = cv2.VideoWriter(
+            self.output_video_path, fourcc, fps, (frame_width, frame_height)
+        )
 
         # Read Frames
         frame_counter = 0
@@ -62,22 +82,69 @@ class LicensePlatesDetector:
                     x1, y1, x2, y2, score, _ = license_plate
 
                     # assign license plate to car
-                    xcar1, ycar1, xcar2, ycar2, car_id = self.filter_cars(license_plate, track_ids)
+                    xcar1, ycar1, xcar2, ycar2, car_id = self.filter_cars(
+                        license_plate, track_ids
+                    )
 
                     if car_id != -1:
-                        license_plate_text, license_plate_text_score = self.ocr_reader.read_license_plate(frame[int(y1):int(y2), int(x1): int(x2), :])
+                        license_plate_text, license_plate_text_score = (
+                            self.ocr_reader.read_license_plate(
+                                frame[int(y1) : int(y2), int(x1) : int(x2), :]
+                            )
+                        )
 
                         if license_plate_text is not None:
-                            results_dictionary[frame_counter][car_id] = {'car': {'bbox': [xcar1, ycar1, xcar2, ycar2]},
-                                                        'license_plate': {'bbox': [x1, y1, x2, y2],
-                                                                            'text': license_plate_text,
-                                                                            'bbox_score': score,
-                                                                            'text_score': license_plate_text_score}}
+                            results_dictionary[frame_counter][car_id] = {
+                                "car": {"bbox": [xcar1, ycar1, xcar2, ycar2]},
+                                "license_plate": {
+                                    "bbox": [x1, y1, x2, y2],
+                                    "text": license_plate_text,
+                                    "bbox_score": score,
+                                    "text_score": license_plate_text_score,
+                                },
+                            }
 
-                            print(f"Detection: {results_dictionary[frame_counter][car_id]}")
-        
+                            # Annotating the frame
+                            cv2.rectangle(
+                                frame,
+                                (int(xcar1), int(ycar1)),
+                                (int(xcar2), int(ycar2)),
+                                (0, 255, 0),
+                                2,
+                            )
+                            cv2.putText(
+                                frame,
+                                f"Car ID: {car_id}",
+                                (int(xcar1), int(ycar1) - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX,
+                                0.5,
+                                (0, 255, 0),
+                                2,
+                            )
+
+                            cv2.rectangle(
+                                frame,
+                                (int(x1), int(y1)),
+                                (int(x2), int(y2)),
+                                (255, 0, 0),
+                                2,
+                            )
+                            cv2.putText(
+                                frame,
+                                f"{license_plate_text}",
+                                (int(x1), int(y1) - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX,
+                                0.5,
+                                (255, 0, 0),
+                                2,
+                            )
+
+            # Write the annotated frame to the output video
+            out.write(frame)
+
         # Release Video Capture
         cap.release()
+        out.release()
         cv2.destroyAllWindows()
 
     def filter_cars(self, license_plate, vehicle_track_ids):
@@ -119,7 +186,7 @@ class LicensePlatesDetector:
 
         Args:
             detections (list): List of vehicle detections.
-        
+
         Returns:
             list: List of filtered vehicle detections.
         """
