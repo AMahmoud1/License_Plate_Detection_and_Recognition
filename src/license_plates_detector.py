@@ -75,6 +75,10 @@ class LicensePlatesDetector:
                                                                             'text_score': license_plate_text_score}}
 
                             print(f"Detection: {results_dictionary[frame_counter][car_id]}")
+        
+        # Release Video Capture
+        cap.release()
+        cv2.destroyAllWindows()
 
     def filter_cars(self, license_plate, vehicle_track_ids):
         """
