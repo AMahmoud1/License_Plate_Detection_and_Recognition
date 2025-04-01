@@ -19,9 +19,9 @@ dict_int_to_char = {'0': 'O',
 
 
 class OCRReader:
-    def __init__(self):
+    def __init__(self, gpu):
         # Initialize the OCR reader
-        self.reader = easyocr.Reader(['en'], gpu=True)
+        self.reader = easyocr.Reader(['en'], gpu=gpu)
 
     def read_license_plate(self, license_plate_crop):
         """
