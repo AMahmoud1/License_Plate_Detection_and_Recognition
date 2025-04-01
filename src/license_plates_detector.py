@@ -104,39 +104,66 @@ class LicensePlatesDetector:
                                 },
                             }
 
-                            # Annotating the frame
+                            # For the car ID
                             cv2.rectangle(
                                 frame,
                                 (int(xcar1), int(ycar1)),
                                 (int(xcar2), int(ycar2)),
-                                (0, 255, 0),
-                                2,
+                                (0, 255, 0),  # Green color for the bounding box
+                                6,  # Further increased thickness for bolder bounding box
+                            )
+
+                            # Adding a background rectangle to the label
+                            label_text = f"Car ID: {car_id}"
+                            (label_width, label_height), _ = cv2.getTextSize(
+                                label_text, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 3  # Increased font scale and thickness
+                            )
+                            cv2.rectangle(
+                                frame,
+                                (int(xcar1), int(ycar1) - 40),  # Adjusted positioning for larger font
+                                (int(xcar1) + label_width, int(ycar1) - 10),
+                                (0, 255, 0),  # Background color same as bbox (green)
+                                -1,  # Filled rectangle for background
                             )
                             cv2.putText(
                                 frame,
-                                f"Car ID: {car_id}",
-                                (int(xcar1), int(ycar1) - 10),
+                                label_text,
+                                (int(xcar1), int(ycar1) - 10),  # Label position
                                 cv2.FONT_HERSHEY_SIMPLEX,
-                                0.5,
-                                (0, 255, 0),
-                                2,
+                                0.8,  # Increased font scale
+                                (255, 255, 255),  # White text on green background
+                                3,  # Increased text thickness
                             )
 
+                            # For the license plate
                             cv2.rectangle(
                                 frame,
                                 (int(x1), int(y1)),
                                 (int(x2), int(y2)),
-                                (255, 0, 0),
-                                2,
+                                (255, 0, 0),  # Red color for the bounding box
+                                6,  # Further increased thickness for bolder bounding box
+                            )
+
+                            # Adding a background rectangle to the license plate label
+                            license_plate_label = f"{license_plate_text}"
+                            (label_width, label_height), _ = cv2.getTextSize(
+                                license_plate_label, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 3  # Increased font scale and thickness
+                            )
+                            cv2.rectangle(
+                                frame,
+                                (int(x1), int(y1) - 40),  # Adjusted positioning for larger font
+                                (int(x1) + label_width, int(y1) - 10),
+                                (255, 0, 0),  # Background color same as bbox (red)
+                                -1,  # Filled rectangle for background
                             )
                             cv2.putText(
                                 frame,
-                                f"{license_plate_text}",
-                                (int(x1), int(y1) - 10),
+                                license_plate_label,
+                                (int(x1), int(y1) - 10),  # Label position
                                 cv2.FONT_HERSHEY_SIMPLEX,
-                                0.5,
-                                (255, 0, 0),
-                                2,
+                                0.8,  # Increased font scale
+                                (255, 255, 255),  # White text on red background
+                                3,  # Increased text thickness
                             )
 
             # Write the annotated frame to the output video
